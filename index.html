@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apple of Fortune</title>
+    <title>Apple of Fortune - Dedicated Player System</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -30,11 +30,31 @@
         @keyframes pulseApple { 0%, 100% { transform: scale(0.9); } 50% { transform: scale(1.1); } }
         @keyframes blinkText { 0% { opacity: 0.4; } 100% { opacity: 1; } }
 
+        /* 👑 ADMIN FULL PAGE */
+        .admin-page {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #020f09; z-index: 150; padding: 20px; display: none; flex-direction: column; overflow-y: auto;
+        }
+        .admin-nav { display: flex; align-items: center; justify-content: space-between; background-color: #051d12; padding: 12px 15px; border-radius: 12px; border: 1px solid #1c5235; margin-bottom: 18px; }
+        .back-game-btn { background-color: #1e5c3f; color: #ffffff; border: 1px solid #4ecc71; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .admin-page-title { font-size: 16px; font-weight: bold; color: #f1c40f; }
+        .panel-section { background: #061910; border: 1px solid #16422d; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        .panel-section-title { font-size: 13px; color: #2ecc71; font-weight: bold; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .panel-input { width: 100%; background: #03120a; border: 1px solid #1c5235; border-radius: 8px; padding: 11px; color: white; font-weight: bold; margin-bottom: 10px; outline: none; font-size: 14px; }
+        .panel-btn { width: 100%; border: none; padding: 11px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-add-acc { background-color: #2ecc71; color: #020f09; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.2); }
+        .panel-acc-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
+        .panel-acc-item { background: #051d12; padding: 10px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #124127; }
+        .p-acc-info { font-size: 13px; line-height: 1.4; }
+        .p-acc-actions { display: flex; gap: 6px; }
+        .p-action-btn { border: none; padding: 6px 10px; font-size: 12px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        .p-btn-link { background-color: #3884ff; color: white; }
+        .p-btn-io { background-color: #f1c40f; color: black; }
+
         /* Game UI */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; }
         .user-badge { color: #2ecc71; font-weight: bold; font-size: 13px; background: rgba(46, 204, 113, 0.1); padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(46,204,113,0.2); }
         .balance-box { background-color: rgba(0, 0, 0, 0.4); padding: 6px 15px; border-radius: 20px; font-weight: bold; color: #ffffff; border: 1px solid #114128; }
-        .game-title { text-align: center; font-size: 14px; letter-spacing: 1px; color: #f1c40f; margin-bottom: 10px; font-weight: bold; }
+        .game-title { text-align: center; font-size: 13px; letter-spacing: 1px; color: #9cbda9; margin-bottom: 10px; font-weight: bold; cursor: pointer; }
         
         /* Board & Buttons */
         .game-board { display: flex; flex-direction: column-reverse; gap: 4px; margin-bottom: 8px; flex-grow: 1; overflow-y: auto; }
@@ -49,7 +69,7 @@
         
         .winnings-bar { background: rgba(0, 0, 0, 0.5); border: 1px dashed #1e5c3f; border-radius: 8px; padding: 8px; text-align: center; font-size: 15px; font-weight: bold; color: #f1c40f; margin-bottom: 8px; display: none; }
         
-        /* 💰 BET PANEL */
+        /* 💰 BET PANEL - FIXED AT BOTTOM */
         .bet-panel { background-color: #0b251a; border-radius: 12px; padding: 12px; border: 1px solid #16422d; margin-top: auto; }
         .shortcut-container { display: flex; gap: 6px; margin-bottom: 10px; }
         .shortcut-btn { flex: 1; background-color: #1e5c3f; color: #a4cfb9; border: none; padding: 10px 0; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
@@ -85,16 +105,52 @@
             <img class="loader-apple" src="https://cdn-icons-png.flaticon.com/512/415/415733.png" alt="Loading Apple">
         </div>
         <div class="loading-title">1XBET GAMES</div>
-        <div class="loading-text">ဂိမ်းကို စတင်ပြင်ဆင်နေပါသည်...</div>
+        <div class="loading-text" id="loader-status">စနစ်ကို စတင်ပြင်ဆင်နေပါသည်...</div>
+    </div>
+
+    <div class="admin-page" id="admin-page-view">
+        <div class="admin-nav">
+            <div class="admin-page-title">👑 Agent Dashboard</div>
+            <button class="back-game-btn" onclick="openAdminPage(false)">← ဂိမ်းသို့ပြန်သွားရန်</button>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-section-title">👤 ကစားသမား အကောင့်အသစ်ဆောက်ရန်</div>
+            <input type="text" id="p-username" class="panel-input" placeholder="User နာမည်ထည့်ပါ (ဥပမာ: mgmg)...">
+            <input type="number" id="p-balance" class="panel-input" placeholder="အစပျိုး Point ထည့်ပါ...">
+            <button class="panel-btn btn-add-acc" onclick="adminCreateAccount()">အကောင့်အသစ်ဆောက်ပြီး Link ထုတ်မည်</button>
+        </div>
+
+        <div class="panel-section" id="p-io-section" style="display:none;">
+            <div class="panel-section-title" style="color: #f1c40f;">💰 Point အသွင်း/အထုတ်  (<span id="p-target-user">None</span>)</div>
+            <input type="number" id="p-io-amount" class="panel-input" placeholder="Point ပမာဏ ရိုက်ထည့်ပါ...">
+            <div style="display:flex; gap:10px;">
+                <button class="panel-btn" style="background-color:#2ecc71; color:black;" onclick="adminProcessIO('deposit')">➕ Point သွင်းမည်</button>
+                <button class="panel-btn" style="background-color:#e74c3c; color:white;" onclick="adminProcessIO('withdraw')">➖ Point ထုတ်မည်</button>
+            </div>
+        </div>
+
+        <div class="panel-section" style="flex-grow: 1; display: flex; flex-direction: column;">
+            <div class="panel-section-title">📋 လက်ရှိ ကစားသမားများ စာရင်း</div>
+            <div class="panel-acc-list" id="p-list-container"></div>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="custom-popup">
+        <div class="popup-content" id="popup-box">
+            <div class="popup-title" id="p-title">ဂုဏ်ယူပါတယ်!</div>
+            <div class="popup-text" id="p-text">1000 K အနိုင်ရရှိပါသည်။</div>
+            <div id="p-btn-container"></div>
+        </div>
     </div>
 
     <div class="header">
-        <div style="font-size: 18px; color: #5c866f;">←</div>
+        <div style="font-size: 18px;">←</div>
         <div class="user-badge">👤 <span id="current-user-display">ဧည့်သည်</span></div>
         <div class="balance-box">လက်ကျန်: <span id="balance">0</span> K</div>
     </div>
     
-    <div class="game-title">APPLE OF FORTUNE</div>
+    <div class="game-title" id="game-main-title" onclick="triggerSecretAdmin()">APPLE OF FORTUNE</div>
     
     <div id="message">လောင်းကြေးတင်ပြီး STAKE ကို နှိပ်ပါ</div>
 
@@ -121,37 +177,32 @@
 
 </div>
 
-<div class="popup-overlay" id="custom-popup">
-    <div class="popup-content" id="popup-box">
-        <div class="popup-title" id="p-title">ဂုဏ်ယူပါတယ်!</div>
-        <div class="popup-text" id="p-text">1000 K အနိုင်ရရှိပါသည်။</div>
-        <div id="p-btn-container"></div>
-    </div>
-</div>
-
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const lockedUser = urlParams.get('user');
 
     let usersDatabase = JSON.parse(localStorage.getItem('usersDB')) || [];
     let activeUserIndex = -1;
+    let isPlayerMode = false;
 
-    // Link ထဲမှာ User ပါလာမှ ပေးဆော့မည့်စနစ်
     if (lockedUser) {
+        isPlayerMode = true;
         activeUserIndex = usersDatabase.findIndex(u => u.username.toLowerCase() === lockedUser.toLowerCase());
         if (activeUserIndex === -1) {
-            // လိုင်းပေါ်က ဒေတာအသစ်ဖြစ်ပါက Database ထဲ ထည့်ပေးသည်
             usersDatabase.push({ username: lockedUser, balance: 0 });
             activeUserIndex = usersDatabase.length - 1;
         }
     } else {
-        // အကယ်၍ လင့်ခ်မပါဘဲ သွားဝင်ပါက ဆော့ခွင့်မပြုပါ
-        alert("❌ မှားယွင်းသော လင့်ခ်ဖြစ်ပါသည်။ Admin ဆီမှ လင့်ခ်တောင်းယူပါ!");
-        document.body.innerHTML = "<h2 style='color:white; text-align:center; margin-top:50px;'>Invalid Game Link!</h2>";
+        activeUserIndex = parseInt(localStorage.getItem('activeUserIdx')) || 0;
+        if (usersDatabase.length === 0) {
+            usersDatabase.push({ username: "Admin_Test", balance: 50000 });
+            activeUserIndex = 0;
+        }
     }
 
     let balance = usersDatabase[activeUserIndex] ? usersDatabase[activeUserIndex].balance : 0;
     let betAmount = 500; let currentRow = 0; let gameActive = false;
+    let titleClickCount = 0; let selectedAdminUserIdx = null;
 
     const goodAppleImg = "https://cdn-icons-png.flaticon.com/512/415/415733.png"; 
     const badAppleImg = "https://cdn-icons-png.flaticon.com/512/811/811454.png";   
@@ -167,6 +218,7 @@
     const winningsDisplay = document.getElementById('winnings-display');
     const currentUserDisplay = document.getElementById('current-user-display');
     const popupOverlay = document.getElementById('custom-popup');
+    const popupBox = document.getElementById('popup-box');
     const pTitle = document.getElementById('p-title');
     const pText = document.getElementById('p-text');
     const pBtnContainer = document.getElementById('p-btn-container');
@@ -175,9 +227,13 @@
         updateGameUI();
         const loader = document.getElementById('app-loader');
         setTimeout(() => {
-            loader.style.opacity = '0';
-            setTimeout(() => { loader.style.visibility = 'hidden'; }, 500);
-        }, 1000);
+            if (!navigator.onLine) {
+                showPopup("🔌 ကွန်ရက်ချိတ်ဆက်မှုမရှိပါ!", "အင်တာနက်လိုင်း လိုအပ်ပါသည်။", "warning");
+            } else {
+                loader.style.opacity = '0';
+                setTimeout(() => { loader.style.visibility = 'hidden'; }, 500);
+            }
+        }, 1200);
     });
 
     function saveToDatabase() {
@@ -185,15 +241,128 @@
             usersDatabase[activeUserIndex].balance = balance;
         }
         localStorage.setItem('usersDB', JSON.stringify(usersDatabase));
+        if(!isPlayerMode) localStorage.setItem('activeUserIdx', activeUserIndex);
     }
 
     function updateGameUI() {
-        usersDatabase = JSON.parse(localStorage.getItem('usersDB')) || usersDatabase;
         if(usersDatabase[activeUserIndex]) {
             currentUserDisplay.innerText = usersDatabase[activeUserIndex].username;
             balance = usersDatabase[activeUserIndex].balance;
-            balDisplay.innerText = balance.toLocaleString();
+            balDisplay.innerText = balance;
         }
+    }
+
+    function triggerSecretAdmin() {
+        if (isPlayerMode) return; 
+        titleClickCount++;
+        if(titleClickCount >= 3) {
+            titleClickCount = 0;
+            openAdminPage(true);
+        }
+        setTimeout(() => { titleClickCount = 0; }, 2000);
+    }
+
+    function openAdminPage(show) {
+        const adminPage = document.getElementById('admin-page-view');
+        if(show) {
+            if(gameActive) { alert("❌ ဂိမ်းဆော့နေဆဲဖြစ်၍ မရပါ!"); return; }
+            adminPage.style.display = 'flex';
+            renderAdminAccounts();
+        } else {
+            adminPage.style.display = 'none';
+            updateGameUI();
+        }
+    }
+
+    function adminCreateAccount() {
+        const nameInp = document.getElementById('p-username');
+        const balInp = document.getElementById('p-balance');
+        let name = nameInp.value.trim().replace(/\s+/g, ''); 
+        let bal = parseInt(balInp.value) || 0;
+
+        if(!name) { alert("အကောင့်နာမည် ထည့်ပါ!"); return; }
+        if(usersDatabase.some(u => u.username.toLowerCase() === name.toLowerCase())) {
+            alert("⚠️ ဤအကောင့်နာမည် ရှိပြီးသားဖြစ်သည်!"); return;
+        }
+
+        usersDatabase.push({ username: name, balance: bal });
+        localStorage.setItem('usersDB', JSON.stringify(usersDatabase));
+        renderAdminAccounts();
+        
+        nameInp.value = ''; balInp.value = '';
+        copyUserLink(name);
+    }
+
+    function copyUserLink(username) {
+        let baseUrl = window.location.href.split('?')[0];
+        let playerLink = `${baseUrl}?user=${username}`;
+        
+        navigator.clipboard.writeText(playerLink).then(() => {
+            alert(`✅ အကောင့်ဆောက်ပြီးပါပြီ။\n\n"${username}" အတွက် Online ကစားရန် Link ကို Clipboard ထဲသို့ ကူးယူပြီးပါပြီ။\n\nကစားသမားထံ ပေးပို့နိုင်ပါပြီဗျာ။`);
+        }).catch(err => {
+            alert(`Link ထွက်ပါပြီ (မကူးမိပါ)- \n${playerLink}`);
+        });
+    }
+
+    function renderAdminAccounts() {
+        const container = document.getElementById('p-list-container');
+        container.innerHTML = '';
+
+        usersDatabase.forEach((user, index) => {
+            let item = document.createElement('div');
+            item.className = 'panel-acc-item';
+            item.innerHTML = `
+                <div class="p-acc-info">
+                    <b>${user.username}</b><br>
+                    <span style="color:#8bb39c; font-size:12px;">Points: ${user.balance} K</span>
+                </div>
+                <div class="p-acc-actions">
+                    <button class="p-action-btn p-btn-link" onclick="copyUserLink('${user.username}')">🔗 Link ယူမည်</button>
+                    <button class="p-action-btn p-btn-io" onclick="adminPrepIO(${index})">သွင်း/ထုတ်</button>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function adminPrepIO(index) {
+        selectedAdminUserIdx = index;
+        document.getElementById('p-target-user').innerText = usersDatabase[index].username;
+        document.getElementById('p-io-section').style.display = 'block';
+    }
+
+    function adminProcessIO(type) {
+        if(selectedAdminUserIdx === null) return;
+        const amtInp = document.getElementById('p-io-amount');
+        let amt = parseInt(amtInp.value);
+
+        if(isNaN(amt) || amt <= 0) { alert("မှန်ကန်သော ပမာဏ ထည့်သွင်းပါ!"); return; }
+
+        if(type === 'deposit') {
+            usersDatabase[selectedAdminUserIdx].balance += amt;
+            alert(`✅ Point +${amt} K သွင်းပြီးပါပြီ။`);
+        } else {
+            if(usersDatabase[selectedAdminUserIdx].balance < amt) { alert("လက်ကျန်မလုံလောက်ပါ!"); return; }
+            usersDatabase[selectedAdminUserIdx].balance -= amt;
+            alert(`✅ Point -${amt} K ထုတ်ပြီးပါပြီ။`);
+        }
+        
+        localStorage.setItem('usersDB', JSON.stringify(usersDatabase));
+        if (selectedAdminUserIdx === activeUserIndex) {
+            balance = usersDatabase[activeUserIndex].balance;
+        }
+        renderAdminAccounts();
+        updateGameUI();
+        amtInp.value = '';
+    }
+
+    function checkInternetConnection() {
+        if (!navigator.onLine) {
+            showPopup("🔌 ကွန်ရက်ချိတ်ဆက်မှုမရှိပါ!", "အင်တာနက်လိုင်း လိုအပ်ပါသည်။", "warning");
+            if(gameActive) { resetGame(); clearBoard(); }
+            return false;
+        }
+        return true;
     }
 
     function generateBoardData() {
@@ -230,6 +399,7 @@
     }
 
     function setBet(type) {
+        if (!checkInternetConnection()) return;
         if (gameActive) return;
         let currentBet = parseInt(betInput.value) || 500;
         if (type === 'min') betInput.value = 500;
@@ -239,18 +409,13 @@
     }
 
     function handleAction() {
-        usersDatabase = JSON.parse(localStorage.getItem('usersDB')) || usersDatabase;
-        balance = usersDatabase[activeUserIndex] ? usersDatabase[activeUserIndex].balance : balance;
-
+        if (!checkInternetConnection()) return;
         if (!gameActive) {
             betAmount = parseInt(betInput.value);
             if (isNaN(betAmount) || betAmount < 500) { msgDisplay.innerText = "❌ အနည်းဆုံး လောင်းကြေး 500 K လိုအပ်ပါသည်။"; return; }
-            if (balance < betAmount || balance === 0) { showPopup("⚠️ လက်ကျန်ငွေမရှိပါ!", `Point မလုံလောက်တော့ပါ။ Admin ထံ ဆက်သွယ်ပြီး Point သွင်းပါ။`, 'warning'); return; }
+            if (balance < betAmount || balance === 0) { showPopup("⚠️ လက်ကျန်ငွေမရှိပါ!", `Point မလုံလောက်တော့ပါ။ Admin ထံ ဆက်သွယ်ပါ။`, 'warning'); return; }
 
-            balance -= betAmount; 
-            saveToDatabase();
-            balDisplay.innerText = balance.toLocaleString();
-            
+            balance -= betAmount; saveToDatabase(); balDisplay.innerText = balance;
             currentRow = 0; gameActive = true; betInput.disabled = true;
             generateBoardData(); createBoard(); activateRow(currentRow);
             actionBtn.innerText = "TAKE"; actionBtn.className = "stake-btn take-mode";
@@ -258,15 +423,14 @@
             winningsDisplay.innerText = `Take Winning: 0 K`; winningsDisplay.style.display = 'block';
         } else {
             let winAmount = Math.floor(betAmount * multipliers[currentRow - 1]);
-            balance += winAmount; 
-            saveToDatabase();
-            balDisplay.innerText = balance.toLocaleString();
-            showPopup("ဂုဏ်ယူပါတယ်!", `စုစုပေါင်းအနိုင်ရငွေ <b style="color:#f1c40f; font-size:18px;">${winAmount.toLocaleString()} K</b> ကို ထုတ်ယူလိုက်ပါပြီ။`, 'success');
+            balance += winAmount; saveToDatabase(); balDisplay.innerText = balance;
+            showPopup("ဂုဏ်ယူပါတယ်!", `စုစုပေါင်းအနိုင်ရငွေ <b style="color:#f1c40f; font-size:18px;">${winAmount} K</b> ကို ထုတ်ယူလိုက်ပါပြီ။`, 'success');
             resetGame();
         }
     }
 
     function chooseBox(rowIdx, boxIdx) {
+        if (!checkInternetConnection()) return;
         if (!gameActive || rowIdx !== currentRow) return;
         
         let isWin = boardData[rowIdx][boxIdx] === 1; 
@@ -275,20 +439,17 @@
         if (isWin) { 
             currentBoxes[boxIdx].innerHTML = `<img src="${goodAppleImg}" alt="Good">`; currentBoxes[boxIdx].style.background = '#2ecc71';
             let currentWinnings = Math.floor(betAmount * multipliers[currentRow]);
-            winningsDisplay.innerHTML = `Take Winning: <span style="font-size:18px; color:#fff;">${currentWinnings.toLocaleString()}</span> K`;
+            winningsDisplay.innerHTML = `Take Winning: <span style="font-size:18px; color:#fff;">${currentWinnings}</span> K`;
 
             if (currentRow < 9) { currentRow++; activateRow(currentRow); msgDisplay.innerText = `🎉 အဆင့် ${currentRow} အောင်မြင်သည်။`; }
             else {
-                balance += currentWinnings; 
-                saveToDatabase();
-                balDisplay.innerText = balance.toLocaleString();
-                showPopup("🏆 JACKPOT ပေါက်ပါပြီ!", `အဆင့်အားလုံးကျော်ဖြတ်ပြီး ${currentWinnings.toLocaleString()} K ဆွတ်ခူးသွားပါတယ်။`, 'success');
+                balance += currentWinnings; saveToDatabase(); balDisplay.innerText = balance;
+                showPopup("🏆 JACKPOT ပေါက်ပါပြီ!", `အဆင့်အားလုံးကျော်ဖြတ်ပြီး ${currentWinnings} K ဆွတ်ခူးသွားပါတယ်။`, 'success');
                 resetGame();
             }
         } else { 
             currentBoxes[boxIdx].innerHTML = `<img src="${badAppleImg}" alt="Bad">`; currentBoxes[boxIdx].style.background = '#e74c3c';
-            saveToDatabase(); 
-            showPopup("စိတ်မကောင်းပါဘူး!", `ပန်းသီးပုပ်မိသွားလို့ လောင်းကြေးပမာဏ <b style="color:#e74c3c;">${betAmount.toLocaleString()} K</b> ရှုံးသွားပါပြီ။`, 'lose');
+            showPopup("စိတ်မကောင်းပါဘူး!", `ပန်းသီးပုပ်မိသွားလို့ လောင်းကြေးပမာဏ <b style="color:#e74c3c;">${betAmount} K</b> ရှုံးသွားပါပြီ။`, 'lose');
             revealAllBoard(); resetGame();
         }
     }
@@ -319,7 +480,8 @@
     function showPopup(title, text, type) {
         pTitle.innerText = title; pText.innerHTML = text; pBtnContainer.innerHTML = ''; 
         if (type === 'warning') {
-            pBtnContainer.innerHTML = `<button class="popup-btn btn-change-amount" onclick="closePopup()">ပိတ်ပါ</button>`;
+            if(!navigator.onLine) pBtnContainer.innerHTML = `<button class="popup-btn btn-retry" onclick="retryConnection()">လိုင်းပြန်စစ်မည်</button>`;
+            else pBtnContainer.innerHTML = `<button class="popup-btn btn-change-amount" onclick="closePopup()">ပိတ်ပါ</button>`;
         } else if (type === 'lose') {
             pBtnContainer.innerHTML = `
                 <div class="popup-btn-group">
@@ -330,10 +492,12 @@
         popupOverlay.style.display = "flex";
     }
 
-    function closePopup() { popupOverlay.style.display = "none"; clearBoard(); updateGameUI(); }
-    function closePopupAndPlay() { popupOverlay.style.display = "none"; clearBoard(); updateGameUI(); handleAction(); }
-    function closePopupAndChange() { popupOverlay.style.display = "none"; clearBoard(); updateGameUI(); betInput.focus(); }
+    function retryConnection() { if(navigator.onLine) { popupOverlay.style.display = "none"; clearBoard(); } }
+    function closePopup() { popupOverlay.style.display = "none"; clearBoard(); }
+    function closePopupAndPlay() { popupOverlay.style.display = "none"; clearBoard(); handleAction(); }
+    function closePopupAndChange() { popupOverlay.style.display = "none"; clearBoard(); betInput.focus(); }
 
+    window.addEventListener('offline', checkInternetConnection);
     createBoard();
 </script>
 
