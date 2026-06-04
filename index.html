@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apple of Fortune</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #092518 0%, #0d3d26 50%, #175a39 100%);
+            color: #ffffff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 10px;
+        }
+        .phone-container {
+            width: 100%; max-width: 412px; height: 840px; background-color: #051d12; border-radius: 20px;
+            overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; padding: 15px; border: 2px solid #1c5235; position: relative;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #0c3320 0%, #04140b 100%);
+            z-index: 200; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease, visibility 0.5s;
+        }
+        .loader-wrapper { position: relative; width: 100px; height: 100px; display: flex; justify-content: center; align-items: center; margin-bottom: 25px; }
+        .glow-ring { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 3px solid transparent; border-top-color: #f1c40f; border-bottom-color: #2ecc71; animation: spinCircle 1.5s linear infinite; }
+        .loader-apple { width: 45px; height: 45px; animation: pulseApple 1.5s ease-in-out infinite; }
+        .loading-title { font-size: 20px; font-weight: bold; letter-spacing: 2px; margin-bottom: 8px; }
+        .loading-text { font-size: 12px; color: #659279; animation: blinkText 1.2s infinite alternate; }
+        @keyframes spinCircle { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulseApple { 0%, 100% { transform: scale(0.9); } 50% { transform: scale(1.1); } }
+        @keyframes blinkText { 0% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        /* Game UI */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; }
+        .user-badge { color: #2ecc71; font-weight: bold; font-size: 13px; background: rgba(46, 204, 113, 0.1); padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(46,204,113,0.2); }
+        .balance-box { background-color: rgba(0, 0, 0, 0.4); padding: 6px 15px; border-radius: 20px; font-weight: bold; color: #ffffff; border: 1px solid #114128; }
+        .game-title { text-align: center; font-size: 14px; letter-spacing: 1px; color: #f1c40f; margin-bottom: 10px; font-weight: bold; }
+        
+        /* Board & Buttons */
+        .game-board { display: flex; flex-direction: column-reverse; gap: 4px; margin-bottom: 8px; flex-grow: 1; overflow-y: auto; }
+        .row { display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 3px 6px; border-radius: 30px; border: 1px solid transparent; }
+        .row.active { background: rgba(78, 204, 113, 0.1); border: 1px solid #4ecc71; }
+        .multiplier-badge { width: 55px; height: 22px; background-color: rgba(30, 92, 63, 0.4); border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: bold; color: #8bb39c; border: 1px solid #16422d; }
+        .row.active .multiplier-badge { background-color: #55ca3a; color: #051d12; border-color: #55ca3a; box-shadow: 0 0 8px rgba(85, 202, 58, 0.6); }
+        .box-container { display: flex; gap: 6px; }
+        .box { width: 46px; height: 46px; background: linear-gradient(135deg, #a0522d 0%, #8b4513 100%); border: 2px solid #5c2c0c; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: inset 0 4px 6px rgba(255,255,255,0.2), 0 4px 6px rgba(0,0,0,0.4); transition: transform 0.1s, background 0.2s; overflow: hidden; }
+        .box img { width: 85%; height: 85%; object-fit: contain; }
+        .row.disabled .box { background: linear-gradient(135deg, #443731 0%, #302622 100%); border: 2px solid #221a17; opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+        
+        .winnings-bar { background: rgba(0, 0, 0, 0.5); border: 1px dashed #1e5c3f; border-radius: 8px; padding: 8px; text-align: center; font-size: 15px; font-weight: bold; color: #f1c40f; margin-bottom: 8px; display: none; }
+        
+        /* 💰 BET PANEL */
+        .bet-panel { background-color: #0b251a; border-radius: 12px; padding: 12px; border: 1px solid #16422d; margin-top: auto; }
+        .shortcut-container { display: flex; gap: 6px; margin-bottom: 10px; }
+        .shortcut-btn { flex: 1; background-color: #1e5c3f; color: #a4cfb9; border: none; padding: 10px 0; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .shortcut-btn:active { background-color: #16452f; }
+        .input-stake-container { display: flex; background-color: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 6px 10px; align-items: center; border: 1px solid #1b4933; gap: 10px; }
+        .input-wrapper { flex: 1; display: flex; flex-direction: column; }
+        .input-wrapper input { background: transparent; border: none; color: white; font-size: 18px; font-weight: bold; outline: none; width: 100%; }
+        .input-wrapper .limits { font-size: 11px; color: #5c866f; margin-top: 2px; }
+        .stake-btn { background-color: #3884ff; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; min-width: 100px; text-align: center; }
+        .stake-btn.take-mode { background-color: #e67e22; }
+        #message { text-align: center; font-size: 13px; color: #f1c40f; margin-bottom: 8px; min-height: 18px; }
+        
+        /* Popups */
+        .popup-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: none; justify-content: center; align-items: center; z-index: 100; border-radius: 20px; }
+        .popup-content { width: 85%; background-color: #0d271b; border: 2px solid #4ecc71; border-radius: 15px; padding: 25px 20px; text-align: center; animation: popupScale 0.3s ease-out; }
+        @keyframes popupScale { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .popup-title { font-size: 20px; font-weight: bold; color: #f1c40f; margin-bottom: 12px; }
+        .popup-text { font-size: 14px; color: #e0e0e0; margin-bottom: 22px; line-height: 1.6; }
+        .popup-btn-group { display: flex; gap: 10px; justify-content: center; }
+        .popup-btn { flex: 1; border: none; padding: 12px 10px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .btn-retry { background-color: #e74c3c; color: white; }
+        .btn-change-amount { background-color: #1e5c3f; color: #ffffff; border: 1px solid #4ecc71; }
+        .btn-success { background-color: #4ecc71; color: #051d12; width: 100%; }
+    </style>
+</head>
+<body>
+
+<div class="phone-container">
+    
+    <div class="loading-screen" id="app-loader">
+        <div class="loader-wrapper">
+            <div class="glow-ring"></div>
+            <img class="loader-apple" src="https://cdn-icons-png.flaticon.com/512/415/415733.png" alt="Loading Apple">
+        </div>
+        <div class="loading-title">1XBET GAMES</div>
+        <div class="loading-text">ဂိမ်းကို စတင်ပြင်ဆင်နေပါသည်...</div>
+    </div>
+
+    <div class="header">
+        <div style="font-size: 18px; color: #5c866f;">←</div>
+        <div class="user-badge">👤 <span id="current-user-display">ဧည့်သည်</span></div>
+        <div class="balance-box">လက်ကျန်: <span id="balance">0</span> K</div>
+    </div>
+    
+    <div class="game-title">APPLE OF FORTUNE</div>
+    
+    <div id="message">လောင်းကြေးတင်ပြီး STAKE ကို နှိပ်ပါ</div>
+
+    <div class="game-board" id="board"></div>
+    
+    <div class="winnings-bar" id="winnings-display">Take Winning: 0 K</div>
+
+    <div class="bet-panel">
+        <div class="shortcut-container">
+            <button class="shortcut-btn" onclick="setBet('min')">MIN</button>
+            <button class="shortcut-btn" onclick="setBet('x2')">X2</button>
+            <button class="shortcut-btn" onclick="setBet('x2_div')">X/2</button>
+            <button class="shortcut-btn" onclick="setBet('max')">MAX</button>
+        </div>
+        
+        <div class="input-stake-container">
+            <div class="input-wrapper">
+                <input type="number" id="bet-input" value="500">
+                <div class="limits">min 500 K - All In Available</div>
+            </div>
+            <button class="stake-btn" id="action-btn" onclick="handleAction()">STAKE</button>
+        </div>
+    </div>
+
+</div>
+
+<div class="popup-overlay" id="custom-popup">
+    <div class="popup-content" id="popup-box">
+        <div class="popup-title" id="p-title">ဂုဏ်ယူပါတယ်!</div>
+        <div class="popup-text" id="p-text">1000 K အနိုင်ရရှိပါသည်။</div>
+        <div id="p-btn-container"></div>
+    </div>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const lockedUser = urlParams.get('user');
+
+    let usersDatabase = JSON.parse(localStorage.getItem('usersDB')) || [];
+    let activeUserIndex = -1;
+
+    // Link ထဲမှာ User ပါလာမှ ပေးဆော့မည့်စနစ်
+    if (lockedUser) {
+        activeUserIndex = usersDatabase.findIndex(u => u.username.toLowerCase() === lockedUser.toLowerCase());
+        if (activeUserIndex === -1) {
+            // လိုင်းပေါ်က ဒေတာအသစ်ဖြစ်ပါက Database ထဲ ထည့်ပေးသည်
+            usersDatabase.push({ username: lockedUser, balance: 0 });
+            activeUserIndex = usersDatabase.length - 1;
+        }
+    } else {
+        // အကယ်၍ လင့်ခ်မပါဘဲ သွားဝင်ပါက ဆော့ခွင့်မပြုပါ
+        alert("❌ မှားယွင်းသော လင့်ခ်ဖြစ်ပါသည်။ Admin ဆီမှ လင့်ခ်တောင်းယူပါ!");
+        document.body.innerHTML = "<h2 style='color:white; text-align:center; margin-top:50px;'>Invalid Game Link!</h2>";
+    }
+
+    let balance = usersDatabase[activeUserIndex] ? usersDatabase[activeUserIndex].balance : 0;
+    let betAmount = 500; let currentRow = 0; let gameActive = false;
+
+    const goodAppleImg = "https://cdn-icons-png.flaticon.com/512/415/415733.png"; 
+    const badAppleImg = "https://cdn-icons-png.flaticon.com/512/811/811454.png";   
+    const multipliers = [1.23, 1.54, 1.93, 2.41, 4.02, 6.71, 11.18, 27.97, 69.93, 349.68];
+    const rowLayouts = [4, 4, 4, 4, 3, 3, 3, 2, 2, 1];
+    let boardData = [];
+
+    const board = document.getElementById('board');
+    const msgDisplay = document.getElementById('message');
+    const balDisplay = document.getElementById('balance');
+    const actionBtn = document.getElementById('action-btn');
+    const betInput = document.getElementById('bet-input');
+    const winningsDisplay = document.getElementById('winnings-display');
+    const currentUserDisplay = document.getElementById('current-user-display');
+    const popupOverlay = document.getElementById('custom-popup');
+    const pTitle = document.getElementById('p-title');
+    const pText = document.getElementById('p-text');
+    const pBtnContainer = document.getElementById('p-btn-container');
+
+    window.addEventListener('load', () => {
+        updateGameUI();
+        const loader = document.getElementById('app-loader');
+        setTimeout(() => {
+            loader.style.opacity = '0';
+            setTimeout(() => { loader.style.visibility = 'hidden'; }, 500);
+        }, 1000);
+    });
+
+    function saveToDatabase() {
+        if(usersDatabase[activeUserIndex]) {
+            usersDatabase[activeUserIndex].balance = balance;
+        }
+        localStorage.setItem('usersDB', JSON.stringify(usersDatabase));
+    }
+
+    function updateGameUI() {
+        usersDatabase = JSON.parse(localStorage.getItem('usersDB')) || usersDatabase;
+        if(usersDatabase[activeUserIndex]) {
+            currentUserDisplay.innerText = usersDatabase[activeUserIndex].username;
+            balance = usersDatabase[activeUserIndex].balance;
+            balDisplay.innerText = balance.toLocaleString();
+        }
+    }
+
+    function generateBoardData() {
+        boardData = [];
+        for (let r = 0; r < 10; r++) {
+            let goodCount = rowLayouts[r]; let rowArray = Array(5).fill(0); let placed = 0;
+            while (placed < goodCount) {
+                let randIdx = Math.floor(Math.random() * 5);
+                if (rowArray[randIdx] === 0) { rowArray[randIdx] = 1; placed++; }
+            }
+            boardData.push(rowArray);
+        }
+    }
+
+    function createBoard() {
+        board.innerHTML = '';
+        for (let r = 0; r < 10; r++) {
+            let rowDiv = document.createElement('div'); rowDiv.className = `row disabled row-${r}`;
+            let multBadge = document.createElement('div'); multBadge.className = 'multiplier-badge'; multBadge.innerText = 'x' + multipliers[r];
+            rowDiv.appendChild(multBadge);
+            let boxContainer = document.createElement('div'); boxContainer.className = 'box-container';
+            for (let b = 0; b < 5; b++) { boxContainer.innerHTML += `<button class="box" onclick="chooseBox(${r}, ${b})" disabled></button>`; }
+            rowDiv.appendChild(boxContainer); board.appendChild(rowDiv);
+        }
+    }
+
+    function clearBoard() {
+        for (let r = 0; r < 10; r++) {
+            let rowEl = document.querySelector(`.row-${r}`); if(!rowEl) continue;
+            rowEl.className = `row disabled row-${r}`;
+            let boxes = rowEl.querySelectorAll('.box'); boxes.forEach(box => { box.innerHTML = ''; box.style.background = ''; box.disabled = true; });
+        }
+        winningsDisplay.style.display = 'none';
+    }
+
+    function setBet(type) {
+        if (gameActive) return;
+        let currentBet = parseInt(betInput.value) || 500;
+        if (type === 'min') betInput.value = 500;
+        else if (type === 'x2') betInput.value = Math.min(balance, currentBet * 2);
+        else if (type === 'x2_div') betInput.value = Math.max(500, Math.floor(currentBet / 2));
+        else if (type === 'max') betInput.value = balance; 
+    }
+
+    function handleAction() {
+        usersDatabase = JSON.parse(localStorage.getItem('usersDB')) || usersDatabase;
+        balance = usersDatabase[activeUserIndex] ? usersDatabase[activeUserIndex].balance : balance;
+
+        if (!gameActive) {
+            betAmount = parseInt(betInput.value);
+            if (isNaN(betAmount) || betAmount < 500) { msgDisplay.innerText = "❌ အနည်းဆုံး လောင်းကြေး 500 K လိုအပ်ပါသည်။"; return; }
+            if (balance < betAmount || balance === 0) { showPopup("⚠️ လက်ကျန်ငွေမရှိပါ!", `Point မလုံလောက်တော့ပါ။ Admin ထံ ဆက်သွယ်ပြီး Point သွင်းပါ။`, 'warning'); return; }
+
+            balance -= betAmount; 
+            saveToDatabase();
+            balDisplay.innerText = balance.toLocaleString();
+            
+            currentRow = 0; gameActive = true; betInput.disabled = true;
+            generateBoardData(); createBoard(); activateRow(currentRow);
+            actionBtn.innerText = "TAKE"; actionBtn.className = "stake-btn take-mode";
+            msgDisplay.innerText = "အဆင့် ၁ မှ သစ်သားပြားတစ်ခုကို ရွေးပါ";
+            winningsDisplay.innerText = `Take Winning: 0 K`; winningsDisplay.style.display = 'block';
+        } else {
+            let winAmount = Math.floor(betAmount * multipliers[currentRow - 1]);
+            balance += winAmount; 
+            saveToDatabase();
+            balDisplay.innerText = balance.toLocaleString();
+            showPopup("ဂုဏ်ယူပါတယ်!", `စုစုပေါင်းအနိုင်ရငွေ <b style="color:#f1c40f; font-size:18px;">${winAmount.toLocaleString()} K</b> ကို ထုတ်ယူလိုက်ပါပြီ။`, 'success');
+            resetGame();
+        }
+    }
+
+    function chooseBox(rowIdx, boxIdx) {
+        if (!gameActive || rowIdx !== currentRow) return;
+        
+        let isWin = boardData[rowIdx][boxIdx] === 1; 
+        let currentBoxes = document.querySelector(`.row-${rowIdx}`).querySelectorAll('.box');
+
+        if (isWin) { 
+            currentBoxes[boxIdx].innerHTML = `<img src="${goodAppleImg}" alt="Good">`; currentBoxes[boxIdx].style.background = '#2ecc71';
+            let currentWinnings = Math.floor(betAmount * multipliers[currentRow]);
+            winningsDisplay.innerHTML = `Take Winning: <span style="font-size:18px; color:#fff;">${currentWinnings.toLocaleString()}</span> K`;
+
+            if (currentRow < 9) { currentRow++; activateRow(currentRow); msgDisplay.innerText = `🎉 အဆင့် ${currentRow} အောင်မြင်သည်။`; }
+            else {
+                balance += currentWinnings; 
+                saveToDatabase();
+                balDisplay.innerText = balance.toLocaleString();
+                showPopup("🏆 JACKPOT ပေါက်ပါပြီ!", `အဆင့်အားလုံးကျော်ဖြတ်ပြီး ${currentWinnings.toLocaleString()} K ဆွတ်ခူးသွားပါတယ်။`, 'success');
+                resetGame();
+            }
+        } else { 
+            currentBoxes[boxIdx].innerHTML = `<img src="${badAppleImg}" alt="Bad">`; currentBoxes[boxIdx].style.background = '#e74c3c';
+            saveToDatabase(); 
+            showPopup("စိတ်မကောင်းပါဘူး!", `ပန်းသီးပုပ်မိသွားလို့ လောင်းကြေးပမာဏ <b style="color:#e74c3c;">${betAmount.toLocaleString()} K</b> ရှုံးသွားပါပြီ။`, 'lose');
+            revealAllBoard(); resetGame();
+        }
+    }
+
+    function activateRow(rowIdx) {
+        for (let r = 0; r < 10; r++) {
+            let rowEl = document.querySelector(`.row-${r}`); if(!rowEl) continue;
+            let boxes = rowEl.querySelectorAll('.box');
+            if (r === rowIdx) { rowEl.className = `row active row-${r}`; boxes.forEach(b => b.disabled = false); }
+            else { rowEl.className = `row disabled row-${r}`; boxes.forEach(b => b.disabled = true); }
+        }
+    }
+
+    function resetGame() { gameActive = false; betInput.disabled = false; actionBtn.innerText = "STAKE"; actionBtn.className = "stake-btn"; }
+    
+    function revealAllBoard() {
+        for (let r = 0; r < 10; r++) {
+            let rowEl = document.querySelector(`.row-${r}`); if(!rowEl) continue;
+            let boxes = rowEl.querySelectorAll('.box');
+            boxes.forEach((box, bIdx) => {
+                let isGood = boardData[r][bIdx] === 1;
+                box.innerHTML = `<img src="${isGood ? goodAppleImg : badAppleImg}">`;
+                box.style.background = isGood ? 'rgba(46, 204, 113, 0.4)' : 'rgba(231, 76, 60, 0.4)'; box.disabled = true;
+            });
+        }
+    }
+
+    function showPopup(title, text, type) {
+        pTitle.innerText = title; pText.innerHTML = text; pBtnContainer.innerHTML = ''; 
+        if (type === 'warning') {
+            pBtnContainer.innerHTML = `<button class="popup-btn btn-change-amount" onclick="closePopup()">ပိတ်ပါ</button>`;
+        } else if (type === 'lose') {
+            pBtnContainer.innerHTML = `
+                <div class="popup-btn-group">
+                    <button class="popup-btn btn-retry" onclick="closePopupAndPlay()">ပြန်ဆော့မည်</button>
+                    <button class="popup-btn btn-change-amount" onclick="closePopupAndChange()">Amount ပြောင်းမည်</button>
+                </div>`;
+        } else { pBtnContainer.innerHTML = `<button class="popup-btn btn-success" onclick="closePopup()">အိုကေ</button>`; }
+        popupOverlay.style.display = "flex";
+    }
+
+    function closePopup() { popupOverlay.style.display = "none"; clearBoard(); updateGameUI(); }
+    function closePopupAndPlay() { popupOverlay.style.display = "none"; clearBoard(); updateGameUI(); handleAction(); }
+    function closePopupAndChange() { popupOverlay.style.display = "none"; clearBoard(); updateGameUI(); betInput.focus(); }
+
+    createBoard();
+</script>
+
+</body>
+</html>
